@@ -21,12 +21,12 @@ var userSchema = new mongoose.Schema(
       require: true,
     },
     Age: {
-        type: Number,
-        require: true,
+      type: Number,
+      require: true,
     },
     DOJ: {
-        type: Date,
-        require: true,
+      type: Date,
+      require: true,
     },
 
     Role: {
@@ -36,4 +36,4 @@ var userSchema = new mongoose.Schema(
   { collection: "Employee" }
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("Employee", userSchema);
