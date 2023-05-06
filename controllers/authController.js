@@ -148,6 +148,51 @@ const authActions = {
       message: authStringConstant.SUCCESSFUL_PING,
     });
   },
+  renewAccessToken: async function (req, res) {
+    //checks the environment and collects the data accordingly
+    if (
+      process.env.NODE_ENV === "development" ||
+      process.env.NODE_ENV === "production"
+    ) {
+      var refreshToken = req.body.refreshToken;
+    } else {
+      var refreshToken = req.query.refreshToken;
+    }
+    if (!refreshToken) {
+      //Token not found!
+      return res.status(403).send(StringConstant.TOKEN_MISSING);
+    }
+    try {
+      //Decode the found token and verify
+      const decodedRefreshToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY);
+      if (decodedRefreshToken) {
+        //Find the user name from the token 
+        const username = decodedRefreshToken.username
+        //creates new access token
+        const accessToken = jwt.sign(
+          { user_id: User._id, username },
+          process.env.ACCESS_TOKEN_KEY,
+          {
+            expiresIn: process.env.ACCESS_TOKEN_TIME,
+          }
+        );
+        return res.status(httpStatusCode.OK).send({
+          success: true,
+          message: StringConstant.SUCCESSFUL_TOKEN_RENEWAL,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        });
+
+
+      } else {
+        return res.status(401).send(StringConstant.INVALID_TOKEN);
+      }
+    } catch (err) {
+      console.log(err)
+      //Response for Invalid token
+      return res.status(401).send(StringConstant.UNKNOWN_ERROR);
+    }
+  },
 
   // Unidentified route
   errorPageRoute: function (req, res) {
