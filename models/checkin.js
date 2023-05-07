@@ -14,7 +14,7 @@ var checkin = new mongoose.Schema(
       type: Date,
     },
     time: {
-      type: Number,
+      type: String,
     },
   },
   { collection: "Checkin" }
