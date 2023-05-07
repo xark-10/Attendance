@@ -25,7 +25,7 @@ const checkinActions = {
       
       const newCheckin = new Checkin({
         employee: employee_id,
-        check_in: checkInDate,
+        check_in: check_in,
         time: time
       });
       

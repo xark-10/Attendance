@@ -10,7 +10,7 @@ var checkin = new mongoose.Schema(
       type: Schema.Types.ObjectId,
       ref: "Employee",
     },
-    checkin: {
+    check_in: {
       type: Date,
     },
     time: {
