@@ -5,8 +5,8 @@ const User = require("../models/user");
 const Employee = require("../models/employee");
 const httpStatusCode = require("../constants/httpStatusCodes");
 const moment = require("moment");
-const Checkin=require("../models/checkin");
-const Overtime=require("../models/overtime");
+const Checkin = require("../models/checkin");
+const Overtime = require("../models/overtime");
 const findActions = {
   findEmployee: async function (req, res) {
     try {
@@ -40,69 +40,67 @@ const findActions = {
       });
     }
   },
-findCheckins: async function (req, res) {
+  findCheckins: async function (req, res) {
     try {
-        const employeeId = req.body.employee_id;
-        const fromdate = req.body.fromdate;
-        const todate = req.body.todate;
+      const employeeId = req.body.employee_id;
 
-        const fromDate = new Date(moment(new Date(fromdate)).format("YYYY-MM-DD"));
-        const toDate = new Date(moment(new Date(todate)).format("YYYY-MM-DD"));
-
-        const employee = await Employee.findById(employeeId);
-        if (!employee) {
-            return res.status(httpStatusCode.UNAUTHORIZED).send({
-                success: false,
-                message: authStringConstant.USER_DOES_NOT_EXIST
-            });
-        }
-
-        const checkin = await Checkin.find({
-            employee: employeeId,
-            "checkin": { $gte: fromDate, $lte: toDate }
+      const employee = await Employee.findById(employeeId);
+      if (!employee) {
+        return res.status(httpStatusCode.UNAUTHORIZED).send({
+          success: false,
+          message: authStringConstant.USER_DOES_NOT_EXIST,
         });
+      }
 
-        return res.status(httpStatusCode.OK).send({
-            checkin: checkin
-        });
+      const checkin = await Checkin.find({
+        employee: employeeId,
+      });
+
+      return res.status(httpStatusCode.OK).send({
+        checkin: checkin,
+      });
     } catch (err) {
-        return res.status(401).send({
-            err: err.message
-        });
+      return res.status(401).send({
+        err: err.message,
+      });
     }
-},
-findOvertime: async function (req, res) {
+  },
+  findOvertime: async function (req, res) {
     try {
-        const employeeId = req.body.employee_id;
-        const fromdate = req.body.fromdate;
-        const todate = req.body.todate;
+      const employeeId = req.body.employee_id;
 
-        const fromDate = new Date(moment(new Date(fromdate)).format("YYYY-MM-DD"));
-        const toDate = new Date(moment(new Date(todate)).format("YYYY-MM-DD"));
-
-        const employee = await Employee.findById(employeeId);
-        if (!employee) {
-            return res.status(httpStatusCode.UNAUTHORIZED).send({
-                success: false,
-                message: authStringConstant.USER_DOES_NOT_EXIST
-            });
-        }
-
-        const overtime = await Overtime.find({
-            employee: employeeId,
-            overtime: { $gte: fromDate, $lte: toDate }
-        }).exec();
-
-        return res.status(httpStatusCode.OK).send({
-            overtime: overtime
+      const employee = await Employee.findById(employeeId);
+      if (!employee) {
+        return res.status(httpStatusCode.UNAUTHORIZED).send({
+          success: false,
+          message: authStringConstant.USER_DOES_NOT_EXIST,
         });
+      }
+
+      const overtime = await Overtime.find({
+        employee: employeeId,
+      }).exec();
+
+      return res.status(httpStatusCode.OK).send({
+        overtime: overtime,
+      });
     } catch (err) {
-        return res.status(401).send({
-            err: err.message
-        });
+      return res.status(401).send({
+        err: err.message,
+      });
     }
-},
-
-
+  },
+  getEmployeeName: async function (req, res) {
+    try {
+      const employeeId = req.body.employee_id;
+      const employee = await Employee.findById(employeeId);
+      const firsName = employee.firstName;
+      const lastName = employee.lastName;
+      res.status(200).json({ firsName, lastName });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  },
 };
 module.exports = findActions;

@@ -3,86 +3,94 @@ const Employee = require("../models/employee");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const passwordSchema = require("../validator/passwordValidator");
-const authStringConstant = require("../constants/strings"); 
+const authStringConstant = require("../constants/strings");
 const Checkin = require("../models/checkin");
-const Overtime= require("../models/overtime")
-const moment = require('moment')
+const Overtime = require("../models/overtime");
+const moment = require("moment");
 
 const checkinActions = {
   newCheckin: async function (req, res) {
     try {
-      
-      const { employee_id, check_in, time } = req.body;
-      const checkInDateFormat = moment(new Date(check_in)).format('YYYY-MM-DD');
-      const checkInDate = new Date(checkInDateFormat)
+      const { employee_id, check_in, checkin_time, checkout_time } = req.body;
 
-      if (!employee_id  && !check_in && !time) {
-        res.status(httpStatusCode.BAD_REQUEST).send({
-          success: false,
-          message: authStringConstant.MISSING_INPUT
-        });
-      }
-      
+      // Convert check-in and checkout times to Date objects with just the time values
+      const checkinTime = new Date(`2000-01-01T${checkin_time}`);
+      const checkoutTime = new Date(`2000-01-01T${checkout_time}`);
+
+      // Calculate the time difference in hours between check-in and checkout times
+      const diff = moment(checkoutTime).diff(moment(checkinTime), "hours");
+
+      // Retrieve the previous check-in and checkout times for the employee
+      const prevCheckin = await Checkin.findOne({ employee: employee_id }).sort(
+        { check_in: -1 }
+      );
+      const prevCheckout = prevCheckin ? prevCheckin.checkout_time : null;
+
+      // Calculate the work hours for the current day by adding the time difference to the work hours for the previous day
+      const prevWorkHours = prevCheckin ? prevCheckin.work_hours : 0;
+      const workHours = prevWorkHours + diff;
+
+      // Save the check-in to the database
       const newCheckin = new Checkin({
         employee: employee_id,
         check_in: check_in,
-        time: time
+        checkin_time: checkin_time,
+        checkout_time: checkout_time,
+        work_hours: workHours,
       });
-      
+
       const savedCheckin = await newCheckin.save();
 
       return res.status(httpStatusCode.OK).send({
         success: true,
         message: authStringConstant.CHECKIN_SUCCESSFUL,
-        checkin_id: savedCheckin._id
+        checkin_id: savedCheckin._id,
+        work_hours: workHours,
       });
-          
     } catch (err) {
-      console.log(err.message)
+      console.log(err.message);
       return res.status(httpStatusCode.CONFLICT).send({
         success: false,
         message: authStringConstant.FAILURE_BOOKING,
-        error: err.message
+        error: err.message,
       });
     }
   },
   newOverTime: async function (req, res) {
     try {
-      
       const { employee_id, overtime, hours } = req.body;
-      const checkInDateFormat = moment(new Date(overtime)).format('YYYY-MM-DD');
-      const checkInDate = new Date(checkInDateFormat)
+      const checkInDateFormat = moment(new Date(overtime)).format("YYYY-MM-DD");
+      const checkInDate = new Date(checkInDateFormat);
 
-      if (!employee_id  && !overtime && !hours) {
+      if (!employee_id && !overtime && !hours) {
         res.status(httpStatusCode.BAD_REQUEST).send({
           success: false,
-          message: authStringConstant.MISSING_INPUT
+          message: authStringConstant.MISSING_INPUT,
         });
       }
-      
+
       const newOvertime = new Overtime({
         employee: employee_id,
         overtime: overtime,
-        hours: hours
+        hours: hours,
       });
-      
+
       const savedOvertime = await newOvertime.save();
 
       return res.status(httpStatusCode.OK).send({
         success: true,
         message: authStringConstant.CHECKIN_SUCCESSFUL,
-        Overtime_id: savedOvertime._id
+        Overtime_id: savedOvertime._id,
       });
-          
     } catch (err) {
-      console.log(err.message)
+      console.log(err.message);
       return res.status(httpStatusCode.CONFLICT).send({
         success: false,
         message: authStringConstant.FAILURE_BOOKING,
-        error: err.message
+        error: err.message,
       });
     }
-  }
-}
+  },
+};
 
 module.exports = checkinActions;

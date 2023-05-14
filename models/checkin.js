@@ -12,9 +12,19 @@ var checkin = new mongoose.Schema(
     },
     check_in: {
       type: Date,
+      required: true,
     },
-    time: {
+    checkin_time: {
       type: String,
+      required: true,
+    },
+    checkout_time: {
+      type: String,
+      required: true,
+    },
+    work_hours: {
+      type: Number,
+      default: 0,
     },
   },
   { collection: "Checkin" }
