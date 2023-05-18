@@ -11,11 +11,30 @@ const moment = require("moment");
 const checkinActions = {
   newCheckin: async function (req, res) {
     try {
-      const { employee_id, check_in, checkin_time, checkout_time } = req.body;
-
+      const {
+        employee_id,
+        check_in,
+        checkin_time,
+        checkout_time,
+        day,
+        overtime_in,
+        overtime_out,
+      } = req.body;
+      const employeeId = req.body.employee_id;
+      const employee = await Employee.findById(employeeId);
       // Convert check-in and checkout times to Date objects with just the time values
-      const checkinTime = new Date(`2000-01-01T${checkin_time}`);
-      const checkoutTime = new Date(`2000-01-01T${checkout_time}`);
+      const checkinTime = new Date(`${check_in}T${checkin_time}`);
+      const checkoutTime = new Date(`${check_in}T${checkout_time}`);
+
+      let overdiff;
+
+      if (overtime_in && overtime_out) {
+        const overTimein = new Date(`${check_in}T${overtime_in}`);
+        const overTimeout = new Date(`${check_in}T${overtime_out}`);
+        overdiff = moment(overTimeout).diff(moment(overTimein), "hours");
+      } else {
+        overdiff = 0;
+      }
 
       // Calculate the time difference in hours between check-in and checkout times
       const diff = moment(checkoutTime).diff(moment(checkinTime), "hours");
@@ -30,13 +49,25 @@ const checkinActions = {
       const prevWorkHours = prevCheckin ? prevCheckin.work_hours : 0;
       const workHours = prevWorkHours + diff;
 
+      const prevOvertimeHours = prevCheckin ? prevCheckin.overtime_hours : 0;
+      const overTimeHours = prevOvertimeHours + overdiff;
+
+      let sundayCount = prevCheckin ? parseInt(prevCheckin.sunday_count) : 0;
+      if (day === "0") {
+        sundayCount = sundayCount + 1;
+      }
       // Save the check-in to the database
       const newCheckin = new Checkin({
         employee: employee_id,
+        employeeName: `${employee.firstName} ${employee.lastName}`,
         check_in: check_in,
         checkin_time: checkin_time,
         checkout_time: checkout_time,
         work_hours: workHours,
+        overtime_in: overtime_in,
+        overtime_out: overtime_out,
+        overtime_hours: overTimeHours,
+        sunday_count: sundayCount,
       });
 
       const savedCheckin = await newCheckin.save();
@@ -46,6 +77,8 @@ const checkinActions = {
         message: authStringConstant.CHECKIN_SUCCESSFUL,
         checkin_id: savedCheckin._id,
         work_hours: workHours,
+        overtime_hours: overTimeHours,
+        sunday_count: sundayCount,
       });
     } catch (err) {
       console.log(err.message);

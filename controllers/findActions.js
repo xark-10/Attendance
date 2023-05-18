@@ -18,8 +18,10 @@ const findActions = {
         });
       }
 
+      const regex = new RegExp(`^${firstName}`, "i"); // Create a case-insensitive regular expression pattern
+
       const foundEmployee = await Employee.find({
-        firstName: firstName,
+        firstName: regex,
       }).exec();
 
       if (foundEmployee.length === 0) {
@@ -65,6 +67,47 @@ const findActions = {
       });
     }
   },
+
+  monthlyCheckins: async function (req, res) {
+    try {
+      const { month, year } = req.body;
+      const date = moment({ year, month: month - 1 });
+
+      const checkins = await Checkin.find({
+        check_in: {
+          $gte: date.startOf("month").toDate(),
+          $lte: date.endOf("month").toDate(),
+        },
+      })
+        .sort({ employeeName: 1 })
+        .lean();
+
+      return res.status(200).json({ checkins });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  },
+  rangedCheckins: async function (req, res) {
+    try {
+      const { fromDate, toDate } = req.body;
+
+      const checkins = await Checkin.find({
+        check_in: {
+          $gte: new Date(fromDate),
+          $lte: new Date(toDate),
+        },
+      })
+        .sort({ employeeName: 1 })
+        .lean();
+
+      return res.status(200).json({ checkins });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  },
+
   findOvertime: async function (req, res) {
     try {
       const employeeId = req.body.employee_id;

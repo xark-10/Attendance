@@ -20,4 +20,6 @@ router.post("/overtime", checkinActions.newOverTime);
 router.post("/checkinHistory", findActions.findCheckins);
 router.post("/overtimeHistory", findActions.findOvertime);
 router.post("/employee", findActions.getEmployeeName);
+router.post("/monthlyReport", findActions.monthlyCheckins);
+router.post("/rangedReport", findActions.rangedCheckins);
 module.exports = router;

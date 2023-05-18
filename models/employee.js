@@ -31,6 +31,23 @@ var userSchema = new mongoose.Schema(
 
     Role: {
       type: String,
+      require: true,
+    },
+    description: {
+      type: String,
+      require: true,
+    },
+    address: {
+      type: String,
+      require: true,
+    },
+    emergency_contact: {
+      type: String,
+      require: true,
+    },
+    PAN: {
+      type: String,
+      require: true,
     },
   },
   { collection: "Employee" }

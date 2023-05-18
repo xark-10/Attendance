@@ -10,6 +10,10 @@ var checkin = new mongoose.Schema(
       type: Schema.Types.ObjectId,
       ref: "Employee",
     },
+    employeeName: {
+      type: String,
+      required: true,
+    },
     check_in: {
       type: Date,
       required: true,
@@ -23,6 +27,20 @@ var checkin = new mongoose.Schema(
       required: true,
     },
     work_hours: {
+      type: Number,
+      default: 0,
+    },
+    sunday_count: {
+      type: Number,
+      default: 0,
+    },
+    overtime_in: {
+      type: String,
+    },
+    overtime_out: {
+      type: String,
+    },
+    overtime_hours: {
       type: Number,
       default: 0,
     },
