@@ -12,6 +12,8 @@ const app = express();
 router.get("/", authActions.pingRoute);
 router.post("/registerUser", authActions.registerRoute);
 router.post("/loginUser", authActions.loginRoute);
+router.post("/registerAdmin", authActions.registerAdmin);
+router.post("/loginAdmin", authActions.adminLoginRoute);
 router.post("/renewAccessToken", authActions.renewAccessToken);
 router.post("/createEmployee", adminActions.addEmployee);
 router.get("/findEmployees", findActions.findEmployee);

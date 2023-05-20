@@ -1,6 +1,7 @@
 // Required dependencies:
 const httpStatusCode = require("../constants/httpStatusCodes");
 const User = require("../models/user");
+const Admin = require("../models/admin");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const passwordSchema = require("../validator/passwordValidator");
@@ -164,10 +165,13 @@ const authActions = {
     }
     try {
       //Decode the found token and verify
-      const decodedRefreshToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY);
+      const decodedRefreshToken = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_KEY
+      );
       if (decodedRefreshToken) {
-        //Find the user name from the token 
-        const username = decodedRefreshToken.username
+        //Find the user name from the token
+        const username = decodedRefreshToken.username;
         //creates new access token
         const accessToken = jwt.sign(
           { user_id: User._id, username },
@@ -182,13 +186,11 @@ const authActions = {
           accessToken: accessToken,
           refreshToken: refreshToken,
         });
-
-
       } else {
         return res.status(401).send(StringConstant.INVALID_TOKEN);
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       //Response for Invalid token
       return res.status(401).send(StringConstant.UNKNOWN_ERROR);
     }
@@ -200,6 +202,133 @@ const authActions = {
       success: "false",
       message: StringConstant.PAGE_NOT_FOUND,
     });
+  },
+  registerAdmin: async function (req, res) {
+    try {
+      const { adminUsername, adminPassword, verifyAdminPassword } = req.body;
+      const isAdminPasswordValid = passwordSchema.validate(adminPassword);
+
+      if (!adminUsername || !adminPassword || !verifyAdminPassword) {
+        console.log(req.body);
+        res.status(httpStatusCode.BAD_REQUEST).send({
+          success: false,
+          message: authStringConstant.MISSING_FIELDS,
+        });
+      } //  If the adminPassword doesn't meet the conditions returns error message
+      else if (!isAdminPasswordValid) {
+        return res.status(httpStatusCode.CONFLICT).send({
+          success: false,
+          message: authStringConstant.PASSWORD_INVALID,
+        });
+      } else if (adminPassword != verifyAdminPassword) {
+        return res.status(httpStatusCode.CONFLICT).send({
+          success: false,
+          message: authStringConstant.PASSWORD_MISMATCH,
+        });
+      } else if (
+        isAdminPasswordValid &
+        (adminPassword === verifyAdminPassword)
+      ) {
+        const admin = await Admin.findOne({ adminUsername });
+        if (admin) {
+          res.status(httpStatusCode.CONFLICT).send({
+            success: false,
+            message: authStringConstant.USER_EXIST,
+          });
+        } else {
+          const newAdmin = new Admin({
+            adminUsername: adminUsername,
+            adminPassword: adminPassword,
+          });
+          await newAdmin.save().then(function (admin) {
+            if (admin) {
+              const accessToken = jwt.sign(
+                { user_id: admin._id, adminUsername },
+                process.env.ACCESS_TOKEN_KEY,
+                {
+                  expiresIn: process.env.ACCESS_TOKEN_TIME,
+                }
+              );
+
+              const refreshToken = jwt.sign(
+                { user_id: admin._id, adminUsername },
+                process.env.REFRESH_TOKEN_KEY,
+                {
+                  expiresIn: process.env.REFRESH_TOKEN_TIME,
+                }
+              );
+              res.status(httpStatusCode.CREATED).send({
+                success: true,
+                message: authStringConstant.SUCCESSFUL_REG,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+              });
+            } else {
+              return res.status(httpStatusCode.CONFLICT).send({
+                success: false,
+                message: authStringConstant.FAILURE_REG,
+                error: err.message,
+              });
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  },
+  adminLoginRoute: async function (req, res) {
+    try {
+      const { adminUsername, adminPassword } = req.body;
+      if (!adminUsername || !adminPassword) {
+        res.status(httpStatusCode.BAD_REQUEST).send({
+          success: false,
+          message: authStringConstant.MISSING_FIELDS,
+        });
+      }
+      const admin = await Admin.findOne({ adminUsername });
+      if (!admin) {
+        res.status(httpStatusCode.UNAUTHORIZED).send({
+          success: false,
+          message: authStringConstant.USER_DOES_NOT_EXIST,
+        });
+      } else {
+        const isAdminPasswordValid = await bcrypt.compare(
+          adminPassword,
+          admin.adminPassword
+        );
+        if (!isAdminPasswordValid) {
+          res.status(httpStatusCode.UNAUTHORIZED).send({
+            success: false,
+            message: authStringConstant.PASSWORD_INVALID,
+          });
+        } else {
+          const accessToken = jwt.sign(
+            { user_id: admin._id, adminUsername },
+            process.env.ACCESS_TOKEN_KEY,
+            {
+              expiresIn: process.env.ACCESS_TOKEN_TIME,
+            }
+          );
+
+          const refreshToken = jwt.sign(
+            { user_id: admin._id, adminUsername },
+            process.env.REFRESH_TOKEN_KEY,
+            {
+              expiresIn: process.env.REFRESH_TOKEN_TIME,
+            }
+          );
+          res.status(httpStatusCode.OK).send({
+            success: true,
+            message: authStringConstant.SUCCESSFUL_LOGIN,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
   },
 };
 

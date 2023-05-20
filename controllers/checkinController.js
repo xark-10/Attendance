@@ -38,24 +38,26 @@ const checkinActions = {
 
       // Calculate the time difference in hours between check-in and checkout times
       const diff = moment(checkoutTime).diff(moment(checkinTime), "hours");
-
-      // Retrieve the previous check-in and checkout times for the employee
-      const prevCheckin = await Checkin.findOne({ employee: employee_id }).sort(
-        { check_in: -1 }
-      );
-      const prevCheckout = prevCheckin ? prevCheckin.checkout_time : null;
-
-      // Calculate the work hours for the current day by adding the time difference to the work hours for the previous day
-      const prevWorkHours = prevCheckin ? prevCheckin.work_hours : 0;
-      const workHours = prevWorkHours + diff;
-
-      const prevOvertimeHours = prevCheckin ? prevCheckin.overtime_hours : 0;
-      const overTimeHours = prevOvertimeHours + overdiff;
-
-      let sundayCount = prevCheckin ? parseInt(prevCheckin.sunday_count) : 0;
+      const workHours = diff;
+      const overTimeHours = overdiff;
+      let sundayCount = 0;
       if (day === "0") {
-        sundayCount = sundayCount + 1;
+        sundayCount = 1;
       }
+
+      // Check if there is an existing check-in for the same day
+      const existingCheckin = await Checkin.findOne({
+        employee: employee_id,
+        check_in: check_in,
+      });
+
+      if (existingCheckin) {
+        return res.status(httpStatusCode.CONFLICT).send({
+          success: false,
+          message: "Check-in already exists for the specified day.",
+        });
+      }
+
       // Save the check-in to the database
       const newCheckin = new Checkin({
         employee: employee_id,
@@ -89,6 +91,7 @@ const checkinActions = {
       });
     }
   },
+
   newOverTime: async function (req, res) {
     try {
       const { employee_id, overtime, hours } = req.body;

@@ -73,35 +73,89 @@ const findActions = {
       const { month, year } = req.body;
       const date = moment({ year, month: month - 1 });
 
-      const checkins = await Checkin.find({
-        check_in: {
-          $gte: date.startOf("month").toDate(),
-          $lte: date.endOf("month").toDate(),
+      const checkinAggregate = await Checkin.aggregate([
+        {
+          $match: {
+            check_in: {
+              $gte: date.startOf("month").toDate(),
+              $lte: date.endOf("month").toDate(),
+            },
+          },
         },
-      })
-        .sort({ employeeName: 1 })
-        .lean();
+        {
+          $group: {
+            _id: "$employeeName",
+            work_hours: { $sum: "$work_hours" },
+            overtime_hours: { $sum: "$overtime_hours" },
+            sunday_count: { $sum: "$sunday_count" },
+            total_work_hours: {
+              $sum: { $add: ["$work_hours", "$overtime_hours"] },
+            },
+          },
+        },
+        {
+          $sort: {
+            _id: 1,
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            employeeName: "$_id",
+            work_hours: 1,
+            overtime_hours: 1,
+            sunday_count: 1,
+            total_work_hours: 1,
+          },
+        },
+      ]);
 
-      return res.status(200).json({ checkins });
+      return res.status(200).json({ checkins: checkinAggregate });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Internal server error" });
     }
   },
+
   rangedCheckins: async function (req, res) {
     try {
       const { fromDate, toDate } = req.body;
 
-      const checkins = await Checkin.find({
-        check_in: {
-          $gte: new Date(fromDate),
-          $lte: new Date(toDate),
+      const checkinAggregate = await Checkin.aggregate([
+        {
+          $match: {
+            check_in: {
+              $gte: new Date(fromDate),
+              $lte: new Date(toDate),
+            },
+          },
         },
-      })
-        .sort({ employeeName: 1 })
-        .lean();
+        {
+          $group: {
+            _id: "$employeeName",
+            work_hours: { $sum: "$work_hours" },
+            overtime_hours: { $sum: "$overtime_hours" },
+            sunday_count: { $sum: "$sunday_count" },
+          },
+        },
+        {
+          $sort: {
+            _id: 1,
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            employeeName: "$_id",
+            work_hours: 1,
+            overtime_hours: 1,
+            sunday_count: 1,
+            total_work_hours: { $add: ["$work_hours", "$overtime_hours"] },
+          },
+        },
+      ]);
 
-      return res.status(200).json({ checkins });
+      return res.status(200).json({ checkins: checkinAggregate });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Internal server error" });
