@@ -199,5 +199,16 @@ const findActions = {
       res.status(500).json({ error: "Internal Server Error" });
     }
   },
+
+  getAllEmployee: async function (req, res) {
+    try {
+      const employees = await Employee.find().sort({ firstName: 1 }).lean();
+
+      return res.status(200).json({ employees });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  },
 };
 module.exports = findActions;

@@ -21,6 +21,7 @@ router.post("/checkin", checkinActions.newCheckin);
 router.post("/overtime", checkinActions.newOverTime);
 router.post("/checkinHistory", findActions.findCheckins);
 router.post("/overtimeHistory", findActions.findOvertime);
+router.post("/allEmployee", findActions.getAllEmployee);
 router.post("/employee", findActions.getEmployeeName);
 router.post("/monthlyReport", findActions.monthlyCheckins);
 router.post("/rangedReport", findActions.rangedCheckins);
