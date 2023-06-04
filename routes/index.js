@@ -25,4 +25,6 @@ router.post("/allEmployee", findActions.getAllEmployee);
 router.post("/employee", findActions.getEmployeeName);
 router.post("/monthlyReport", findActions.monthlyCheckins);
 router.post("/rangedReport", findActions.rangedCheckins);
+router.post("/sendotp", authActions.generateAndSendVerificationNumber);
+router.post("/verifyotp", authActions.verifyVerificationCode);
 module.exports = router;

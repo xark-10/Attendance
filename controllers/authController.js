@@ -6,6 +6,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const passwordSchema = require("../validator/passwordValidator");
 const authStringConstant = require("../constants/strings");
+const nodemailer = require("nodemailer");
+let generatedVerificationNumber;
 
 // Authentication Controller Commands:
 const authActions = {
@@ -328,6 +330,63 @@ const authActions = {
       }
     } catch (error) {
       console.log(error);
+    }
+  },
+
+  generateAndSendVerificationNumber: async function (req, res) {
+    try {
+      // Generate a random 6-digit number
+      generatedVerificationNumber = Math.floor(100000 + Math.random() * 900000);
+      // Create a Nodemailer transport
+      const transporter = nodemailer.createTransport({
+        service: "Gmail", // e.g., Gmail, Outlook, etc.
+        auth: {
+          user: process.env.GMAILID,
+          pass: process.env.GMAILPASSWD,
+        },
+      });
+
+      // Email options
+      const mailOptions = {
+        from: process.env.GMAILID,
+        to: "sridevipwdc@gmail.com",
+        subject: "Verification Code",
+        text: `Your verification code is: ${generatedVerificationNumber}`,
+      };
+
+      // Send email
+      const info = await transporter.sendMail(mailOptions);
+
+      return res.send({
+        success: true,
+        message: "Email sent",
+      });
+    } catch (error) {
+      return res.status(httpStatusCode.CONFLICT).send({
+        success: false,
+        message: "Error sending email",
+        error: error.message,
+      });
+    }
+  },
+
+  verifyVerificationCode: async function (req, res) {
+    const { verificationCode } = req.body;
+
+    // Parse the verification code as an integer
+    const parsedVerificationCode = parseInt(verificationCode, 10);
+
+    // Compare the verification code with the stored generated code
+    if (parsedVerificationCode === generatedVerificationNumber) {
+      return res.send({
+        success: true,
+        message: "Verification code is valid",
+      });
+    } else {
+      return res.status(httpStatusCode.CONFLICT).send({
+        success: false,
+        message: "Verification code is invalid",
+      });
     }
   },
 };
