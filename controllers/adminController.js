@@ -64,5 +64,20 @@ const adminActions = {
       });
     }
   },
+  deleteEmployee: async function (req, res) {
+    try {
+      const id = req.params.id;
+
+      const removedEmployee = await Employee.findByIdAndDelete(id);
+
+      if (!removedEmployee) {
+        res.status(404).json({ error: "Employee record not found" });
+      } else {
+        res.json({ message: "Employee record deleted successfully" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete employee record" });
+    }
+  },
 };
 module.exports = adminActions;

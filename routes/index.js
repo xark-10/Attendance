@@ -27,4 +27,6 @@ router.post("/monthlyReport", findActions.monthlyCheckins);
 router.post("/rangedReport", findActions.rangedCheckins);
 router.post("/sendotp", authActions.generateAndSendVerificationNumber);
 router.post("/verifyotp", authActions.verifyVerificationCode);
+router.delete("/removeCheckin/:id", checkinActions.deleteCheckin);
+router.delete("/removeEmployee/:id", adminActions.deleteEmployee);
 module.exports = router;

@@ -31,13 +31,17 @@ const checkinActions = {
       if (overtime_in && overtime_out) {
         const overTimein = new Date(`${check_in}T${overtime_in}`);
         const overTimeout = new Date(`${check_in}T${overtime_out}`);
-        overdiff = moment(overTimeout).diff(moment(overTimein), "hours");
+        overdiff = moment(overTimeout).diff(moment(overTimein), "hours", true);
       } else {
         overdiff = 0;
       }
 
       // Calculate the time difference in hours between check-in and checkout times
-      const diff = moment(checkoutTime).diff(moment(checkinTime), "hours");
+      const diff = moment(checkoutTime).diff(
+        moment(checkinTime),
+        "hours",
+        true
+      );
       const workHours = diff;
       const overTimeHours = overdiff;
       let sundayCount = 0;
@@ -125,6 +129,21 @@ const checkinActions = {
         message: authStringConstant.FAILURE_BOOKING,
         error: err.message,
       });
+    }
+  },
+  deleteCheckin: async function (req, res) {
+    try {
+      const id = req.params.id;
+
+      const removedCheckin = await Checkin.findByIdAndRemove(id);
+
+      if (!removedCheckin) {
+        res.status(404).json({ error: "Check-in entry not found" });
+      } else {
+        res.json({ message: "Check-in entry deleted successfully" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete check-in entry" });
     }
   },
 };
